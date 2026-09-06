@@ -1,0 +1,1033 @@
+import html
+from IPython.display import HTML
+
+html_content = <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modern E-Commerce Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      background-color: #f8fafc;
+    }
+
+    .role-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .badge {
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge.customer {
+      background-color: #e2e8f0;
+      color: #475569;
+    }
+
+    .badge.admin {
+      background-color: #fee2e2;
+      color: #dc2626;
+    }
+
+    .delete-btn {
+      background-color: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fca5a5;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .delete-btn:hover {
+      background-color: #ef4444;
+      color: #ffffff;
+    }
+
+    .edit-btn {
+      background-color: #e0e7ff;
+      color: #4338ca;
+      border: 1px solid #c7d2fe;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .edit-btn:hover {
+      background-color: #4f46e5;
+      color: #ffffff;
+    }
+
+    .buy-btn {
+      background-color: #10b981;
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .buy-btn:hover {
+      background-color: #059669;
+    }
+
+    .app-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      padding: 1rem;
+    }
+
+    .app-modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content-card {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 12px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      transform: translateY(-20px);
+      transition: transform 0.3s ease;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .app-modal.active .modal-content-card {
+      transform: translateY(0);
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #64748b;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .modal-close-btn:hover {
+      color: #ef4444;
+    }
+
+    .cart-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: flex-end;
+      z-index: 1000;
+    }
+
+    .cart-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    .cart-content {
+      background: #ffffff;
+      width: 380px;
+      max-width: 90%;
+      height: 100%;
+      position: relative;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-out;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    .cart-modal:not(.hidden) .cart-content {
+      transform: translateX(0);
+    }
+
+    /* Print styles to isolate the printable receipt */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printableReceiptArea, #printableReceiptArea * {
+        visibility: visible;
+      }
+      #printableReceiptArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="text-gray-800">
+  <!-- Navigation -->
+  <nav class="bg-gray-800 text-white py-4 sticky top-0 z-50 shadow-md">
+    <div class="container mx-auto flex justify-between items-center px-4 flex-wrap gap-3">
+      <div class="text-2xl font-bold tracking-tight">ModernStore</div>
+      <div class="flex items-center space-x-3 flex-wrap">
+        <div class="role-badge">
+          Role: <span id="currentRoleBadge" class="badge customer">Customer</span>
+          <button id="toggleRoleBtn" class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-300">Switch to Admin</button>
+        </div>
+        <button id="viewProductsBtn" class="px-3 py-1.5 rounded transition hover:bg-gray-700 font-medium">Products</button>
+        <button id="viewAdminBtn" class="px-3 py-1.5 rounded transition hover:bg-gray-700 font-medium hidden">Admin Panel</button>
+        <button id="cartToggleBtn" class="bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded font-medium flex items-center gap-1.5 transition">
+          Cart (<span id="cartCount">0</span>)
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto my-6 px-4 flex-grow">
+    <!-- View: Catalog / Storefront -->
+    <section id="catalogSection">
+      <!-- Search & Filters -->
+      <div class="flex flex-wrap items-center gap-4 p-4 mb-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <input type="text" id="searchInput" placeholder="Search products..." class="flex-1 min-w-[160px] px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        <select id="categoryFilter" class="flex-1 min-w-[140px] px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <option value="">All Categories</option>
+          <option value="electronics">Electronics</option>
+          <option value="apparel">Apparel</option>
+          <option value="home">Home</option>
+        </select>
+        <input type="number" id="maxPriceFilter" placeholder="Max price ($)" min="0" class="flex-1 min-w-[120px] px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        <button id="resetFiltersBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 text-sm rounded-lg transition">Reset</button>
+      </div>
+
+      <!-- Products Grid -->
+      <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+    </section>
+
+    <!-- View: Admin Inventory Management -->
+    <section id="adminSection" class="hidden">
+      <div class="flex flex-col gap-8">
+        <!-- Add Product Form -->
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <h2 class="text-xl font-bold mb-4 text-gray-800">Add New Product</h2>
+          <form id="productForm" class="space-y-4">
+            <div>
+              <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <input type="text" id="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea id="description" rows="3" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                <input type="number" id="price" step="0.01" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              </div>
+              <div>
+                <label for="stock" class="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+                <input type="number" id="stock" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              </div>
+              <div>
+                <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select id="category" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <option value="electronics">Electronics</option>
+                  <option value="apparel">Apparel</option>
+                  <option value="home">Home</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Image URL or Upload File -->
+            <div class="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-lg space-y-3">
+              <label class="block text-sm font-medium text-gray-700">Product Image (Enter URL or Upload File)</label>
+              <input type="url" id="imageUrl" placeholder="Image URL (https://...)" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" />
+              <div class="flex items-center gap-3">
+                <span class="text-xs text-gray-500 uppercase font-semibold">or upload</span>
+                <input type="file" id="imageFileInput" accept="image/*" class="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+              </div>
+            </div>
+
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg w-full transition shadow-sm">Save Product</button>
+          </form>
+        </div>
+
+        <!-- Inventory List -->
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <h2 class="text-xl font-bold mb-4 text-gray-800">Manage Products</h2>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                  <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                  <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                  <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminInventoryTableBody" class="divide-y divide-gray-200"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Cart Drawer -->
+  <div id="cartModal" class="cart-modal hidden">
+    <div class="cart-overlay" id="cartOverlay"></div>
+    <div class="cart-content">
+      <div class="p-4 border-b flex justify-between items-center">
+        <h2 class="text-lg font-bold">Shopping Cart</h2>
+        <button id="closeCartBtn" class="text-gray-500 hover:text-gray-800 text-xl font-bold">&times;</button>
+      </div>
+      <div id="cartItems" class="flex-grow p-4 overflow-y-auto divide-y divide-gray-100"></div>
+      <div class="p-4 border-t bg-gray-50">
+        <div class="flex justify-between text-base font-bold mb-4">
+          <span>Total:</span>
+          <span id="cartTotalDisplay">$0.00</span>
+        </div>
+        <button id="checkoutBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg w-full transition">Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Detail Modal -->
+  <div id="productDetailModal" class="app-modal">
+    <div class="modal-content-card max-w-2xl w-full">
+      <button id="productDetailCloseBtn" class="modal-close-btn">&times;</button>
+      <div id="productDetailContainer" class="flex flex-col md:flex-row gap-6"></div>
+    </div>
+  </div>
+
+  <!-- Edit Product Modal (Admin) -->
+  <div id="editProductModal" class="app-modal">
+    <div class="modal-content-card max-w-md w-full">
+      <button id="editModalCloseBtn" class="modal-close-btn">&times;</button>
+      <h3 class="text-xl font-bold mb-4 text-gray-800">Edit Product</h3>
+      <form id="editProductForm" class="space-y-4">
+        <input type="hidden" id="editProductId" />
+        <div>
+          <label for="editTitle" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+          <input type="text" id="editTitle" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="editPrice" class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+            <input type="number" id="editPrice" step="0.01" min="0" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label for="editStock" class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+            <input type="number" id="editStock" min="0" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+        </div>
+        <div>
+          <label for="editCategory" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <select id="editCategory" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="electronics">Electronics</option>
+            <option value="apparel">Apparel</option>
+            <option value="home">Home</option>
+          </select>
+        </div>
+        <div class="p-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg space-y-2">
+          <label class="block text-xs font-semibold text-gray-600">Product Image URL / File</label>
+          <input type="url" id="editImageUrl" placeholder="Image URL (https://...)" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md bg-white focus:outline-none" />
+          <input type="file" id="editImageFileInput" accept="image/*" class="text-xs text-gray-600 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="cancelEditBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium">Cancel</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Buy Now Modal -->
+  <div id="buyNowModal" class="app-modal">
+    <div class="modal-content-card max-w-sm w-full text-center">
+      <button id="buyNowCloseBtn" class="modal-close-btn">&times;</button>
+      <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">✓</div>
+      <h3 class="text-lg font-bold text-gray-800 mb-1">Instant Checkout</h3>
+      <p class="text-sm text-gray-500 mb-4">Confirm purchase for 1 unit.</p>
+      <div class="p-3 bg-gray-50 rounded-lg border border-gray-100 mb-4 text-left flex items-center gap-3">
+        <img id="buyNowImage" src="" class="w-12 h-12 rounded object-cover border" />
+        <div>
+          <h4 id="buyNowTitle" class="font-semibold text-sm text-gray-800 line-clamp-1">Product</h4>
+          <p id="buyNowPrice" class="text-emerald-600 font-bold text-sm">$0.00</p>
+        </div>
+      </div>
+      <button id="confirmBuyBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg transition text-sm">Confirm & Place Order</button>
+    </div>
+  </div>
+
+  <!-- Order Receipt Modal (Downloadable / Printable) -->
+  <div id="receiptModal" class="app-modal">
+    <div class="modal-content-card max-w-md w-full">
+      <button id="receiptCloseBtn" class="modal-close-btn no-print">&times;</button>
+      
+      <!-- Printable Area -->
+      <div id="printableReceiptArea">
+        <div class="text-center pb-4 border-b border-gray-200">
+          <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">✓</div>
+          <h3 class="text-xl font-bold text-gray-900">Payment Receipt</h3>
+          <p class="text-xs text-gray-500 mt-1">Thank you for your purchase!</p>
+          <div class="mt-3 text-left bg-gray-50 p-3 rounded-lg text-xs space-y-1 text-gray-600 border border-gray-100">
+            <div><strong class="text-gray-700">Order ID:</strong> <span id="receiptOrderId">#ORD-0000</span></div>
+            <div><strong class="text-gray-700">Date:</strong> <span id="receiptDate">--</span></div>
+            <div><strong class="text-gray-700">Payment:</strong> Paid (Simulated)</div>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="py-4 border-b border-gray-200">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Order Items</h4>
+          <div id="receiptItemsList" class="space-y-2 text-sm"></div>
+        </div>
+
+        <!-- Order Total -->
+        <div class="pt-3 pb-2 flex justify-between items-center text-base font-bold text-gray-900">
+          <span>Total Paid:</span>
+          <span id="receiptTotalAmount" class="text-emerald-600">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Receipt Actions (Hidden from Print) -->
+      <div class="mt-5 flex gap-2 no-print">
+        <button id="printReceiptBtn" class="flex-1 bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
+          <span>🖨️</span> Print Receipt
+        </button>
+        <button id="downloadReceiptBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
+          <span>📥</span> Download (.txt)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_PRODUCTS = [
+      {
+        id: "prod_1",
+        title: "Wireless ANC Headphones",
+        description: "Active noise cancellation with 30-hour playback duration and high fidelity acoustic drivers.",
+        price: 199.99,
+        category: "electronics",
+        stock: 12,
+        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"
+      },
+      {
+        id: "prod_2",
+        title: "Mechanical Keyboard",
+        description: "Custom hot-swappable switches with durable PBT keycaps and RGB backlight profiles.",
+        price: 89.99,
+        category: "electronics",
+        stock: 20,
+        imageUrl: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80"
+      },
+      {
+        id: "prod_3",
+        title: "Linen Minimalist Shirt",
+        description: "100% organic breathable linen tailoring with a crisp, modern casual silhouette.",
+        price: 49.50,
+        category: "apparel",
+        stock: 35,
+        imageUrl: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&q=80"
+      }
+    ];
+
+    // State
+    let products = JSON.parse(localStorage.getItem("products")) || DEFAULT_PRODUCTS;
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    let currentUserRole = localStorage.getItem("userRole") || "customer";
+    let pendingBuyProduct = null;
+    let currentReceiptData = null;
+
+    // Elements
+    const productsGrid = document.getElementById("productsGrid");
+    const searchInput = document.getElementById("searchInput");
+    const categoryFilter = document.getElementById("categoryFilter");
+    const maxPriceFilter = document.getElementById("maxPriceFilter");
+    const resetFiltersBtn = document.getElementById("resetFiltersBtn");
+    const cartModal = document.getElementById("cartModal");
+    const cartToggleBtn = document.getElementById("cartToggleBtn");
+    const closeCartBtn = document.getElementById("closeCartBtn");
+    const cartOverlay = document.getElementById("cartOverlay");
+    const cartItemsContainer = document.getElementById("cartItems");
+    const cartTotalDisplay = document.getElementById("cartTotalDisplay");
+    const cartCountDisplay = document.getElementById("cartCount");
+    const checkoutBtn = document.getElementById("checkoutBtn");
+    const viewProductsBtn = document.getElementById("viewProductsBtn");
+    const viewAdminBtn = document.getElementById("viewAdminBtn");
+    const catalogSection = document.getElementById("catalogSection");
+    const adminSection = document.getElementById("adminSection");
+    const productForm = document.getElementById("productForm");
+    const adminInventoryTableBody = document.getElementById("adminInventoryTableBody");
+    const toggleRoleBtn = document.getElementById("toggleRoleBtn");
+    const currentRoleBadge = document.getElementById("currentRoleBadge");
+    const productDetailModal = document.getElementById("productDetailModal");
+    const productDetailCloseBtn = document.getElementById("productDetailCloseBtn");
+    const productDetailContainer = document.getElementById("productDetailContainer");
+
+    // Edit elements
+    const editProductModal = document.getElementById("editProductModal");
+    const editProductForm = document.getElementById("editProductForm");
+    const editModalCloseBtn = document.getElementById("editModalCloseBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const editProductId = document.getElementById("editProductId");
+    const editTitle = document.getElementById("editTitle");
+    const editPrice = document.getElementById("editPrice");
+    const editStock = document.getElementById("editStock");
+    const editCategory = document.getElementById("editCategory");
+    const editImageUrl = document.getElementById("editImageUrl");
+    const editImageFileInput = document.getElementById("editImageFileInput");
+    const imageFileInput = document.getElementById("imageFileInput");
+
+    // Buy Now elements
+    const buyNowModal = document.getElementById("buyNowModal");
+    const buyNowCloseBtn = document.getElementById("buyNowCloseBtn");
+    const confirmBuyBtn = document.getElementById("confirmBuyBtn");
+    const buyNowTitle = document.getElementById("buyNowTitle");
+    const buyNowPrice = document.getElementById("buyNowPrice");
+    const buyNowImage = document.getElementById("buyNowImage");
+
+    // Receipt elements
+    const receiptModal = document.getElementById("receiptModal");
+    const receiptCloseBtn = document.getElementById("receiptCloseBtn");
+    const receiptOrderId = document.getElementById("receiptOrderId");
+    const receiptDate = document.getElementById("receiptDate");
+    const receiptItemsList = document.getElementById("receiptItemsList");
+    const receiptTotalAmount = document.getElementById("receiptTotalAmount");
+    const printReceiptBtn = document.getElementById("printReceiptBtn");
+    const downloadReceiptBtn = document.getElementById("downloadReceiptBtn");
+
+    function saveState() {
+      localStorage.setItem("products", JSON.stringify(products));
+      localStorage.setItem("cart", JSON.stringify(cart));
+      localStorage.setItem("userRole", currentUserRole);
+    }
+
+    // Role Handling
+    function setRole(newRole) {
+      currentUserRole = newRole;
+      saveState();
+      updateRoleUI();
+      renderProducts();
+      if (currentUserRole === "admin") renderAdminInventory();
+    }
+
+    function updateRoleUI() {
+      if (currentUserRole === "admin") {
+        currentRoleBadge.textContent = "Admin";
+        currentRoleBadge.className = "badge admin";
+        toggleRoleBtn.textContent = "Switch to Customer";
+        viewAdminBtn.classList.remove("hidden");
+      } else {
+        currentRoleBadge.textContent = "Customer";
+        currentRoleBadge.className = "badge customer";
+        toggleRoleBtn.textContent = "Switch to Admin";
+        viewAdminBtn.classList.add("hidden");
+        if (!adminSection.classList.contains("hidden")) viewProductsBtn.click();
+      }
+    }
+
+    toggleRoleBtn.addEventListener("click", () => {
+      if (currentUserRole === "customer") {
+        const pass = prompt("Enter Admin Password (demo: admin123):");
+        if (pass === "admin123") setRole("admin");
+        else alert("Invalid password!");
+      } else {
+        setRole("customer");
+      }
+    });
+
+    // File to Base64 Reader Helper
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    imageFileInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const base64 = await fileToBase64(file);
+        document.getElementById("imageUrl").value = base64;
+      }
+    });
+
+    editImageFileInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const base64 = await fileToBase64(file);
+        editImageUrl.value = base64;
+      }
+    });
+
+    // Catalog Rendering
+    function renderProducts() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const selectedCategory = categoryFilter.value;
+      const maxPrice = parseFloat(maxPriceFilter.value);
+
+      const filtered = products.filter((p) => {
+        const matchesSearch = p.title.toLowerCase().includes(searchTerm) || p.description.toLowerCase().includes(searchTerm);
+        const matchesCategory = selectedCategory ? p.category === selectedCategory : true;
+        const matchesPrice = !isNaN(maxPrice) ? p.price <= maxPrice : true;
+        return matchesSearch && matchesCategory && matchesPrice;
+      });
+
+      if (filtered.length === 0) {
+        productsGrid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-8">No products found matching filters.</p>`;
+        return;
+      }
+
+      productsGrid.innerHTML = filtered.map((p) => `
+        <div class="flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
+          <img src="${p.imageUrl}" alt="${p.title}" class="w-full h-44 object-cover border-b cursor-pointer" onclick="viewProductDetail('${p.id}')" />
+          <div class="flex flex-col flex-grow p-4">
+            <span class="text-xs uppercase font-semibold text-gray-500">${p.category}</span>
+            <h3 class="font-bold text-gray-800 text-base mt-1 line-clamp-1">${p.title}</h3>
+            <p class="text-xs text-gray-600 mt-1 line-clamp-2 flex-grow">${p.description}</p>
+            <div class="flex justify-between items-center mt-3 pt-3 border-t">
+              <span class="text-base font-bold text-blue-600">$${p.price.toFixed(2)}</span>
+              <span class="text-xs ${p.stock > 0 ? 'text-gray-500' : 'text-red-500 font-semibold'}">${p.stock > 0 ? 'Stock: ' + p.stock : 'Out of stock'}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <button
+                class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                onclick="addToCart('${p.id}')"
+                ${p.stock < 1 ? "disabled" : ""}
+              >
+                ${p.stock > 0 ? "Add to Cart" : "Sold Out"}
+              </button>
+              <button
+                class="buy-btn text-xs text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                onclick="buyNow('${p.id}')"
+                ${p.stock < 1 ? "disabled" : ""}
+              >
+                Buy Now
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // Admin Table Rendering
+    function renderAdminInventory() {
+      if (currentUserRole !== "admin") return;
+
+      adminInventoryTableBody.innerHTML = products.map((p) => `
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 whitespace-nowrap flex items-center gap-3">
+            <img src="${p.imageUrl}" class="w-9 h-9 rounded object-cover border" />
+            <span class="font-semibold text-gray-800">${p.title}</span>
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap capitalize text-gray-600">${p.category}</td>
+          <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-800">$${p.price.toFixed(2)}</td>
+          <td class="px-4 py-3 whitespace-nowrap ${p.stock < 5 ? 'text-red-600 font-bold' : 'text-gray-600'}">${p.stock}</td>
+          <td class="px-4 py-3 whitespace-nowrap space-x-2">
+            <button class="edit-btn" onclick="openEditModal('${p.id}')">Edit</button>
+            <button class="delete-btn" onclick="deleteProduct('${p.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    // Product Detail
+    window.viewProductDetail = function(id) {
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+
+      productDetailContainer.innerHTML = `
+        <div class="md:w-1/2">
+          <img src="${product.imageUrl}" alt="${product.title}" class="w-full h-64 object-cover rounded-lg border" />
+        </div>
+        <div class="md:w-1/2 flex flex-col">
+          <span class="text-xs uppercase font-semibold text-blue-600">${product.category}</span>
+          <h3 class="text-xl font-bold text-gray-900 mt-1">${product.title}</h3>
+          <p class="text-sm text-gray-600 mt-3 flex-grow">${product.description}</p>
+          <div class="my-4">
+            <span class="text-2xl font-bold text-blue-600">$${product.price.toFixed(2)}</span>
+            <p class="text-xs text-gray-500 mt-1">Status: ${product.stock > 0 ? product.stock + ' items in stock' : '<span class="text-red-500 font-bold">Out of stock</span>'}</p>
+          </div>
+          <div class="flex gap-2">
+            <button
+              class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm transition disabled:opacity-50"
+              onclick="addToCart('${product.id}'); productDetailCloseBtn.click();"
+              ${product.stock < 1 ? "disabled" : ""}
+            >
+              Add to Cart
+            </button>
+            <button
+              class="flex-1 buy-btn text-sm py-2 disabled:opacity-50"
+              onclick="productDetailCloseBtn.click(); buyNow('${product.id}');"
+              ${product.stock < 1 ? "disabled" : ""}
+            >
+              Buy Now
+            </button>
+          </div>
+        </div>
+      `;
+      productDetailModal.classList.add("active");
+    };
+
+    productDetailCloseBtn.addEventListener("click", () => productDetailModal.classList.remove("active"));
+
+    // Receipt Modal Logic
+    function showReceiptModal(orderData) {
+      currentReceiptData = orderData;
+      receiptOrderId.textContent = `#${orderData.id}`;
+      receiptDate.textContent = orderData.date;
+      receiptTotalAmount.textContent = `$${orderData.total.toFixed(2)}`;
+
+      receiptItemsList.innerHTML = orderData.items.map(item => `
+        <div class="flex justify-between items-center text-xs py-1">
+          <span class="text-gray-700 font-medium">${item.title} <span class="text-gray-500">&times; ${item.quantity}</span></span>
+          <span class="font-semibold text-gray-900">$${(item.price * item.quantity).toFixed(2)}</span>
+        </div>
+      `).join("");
+
+      receiptModal.classList.add("active");
+    }
+
+    receiptCloseBtn.addEventListener("click", () => {
+      receiptModal.classList.remove("active");
+      currentReceiptData = null;
+    });
+
+    // Print Receipt Handler
+    printReceiptBtn.addEventListener("click", () => {
+      window.print();
+    });
+
+    // Download Receipt Handler (.txt)
+    downloadReceiptBtn.addEventListener("click", () => {
+      if (!currentReceiptData) return;
+
+      let receiptText = `========================================\\n`;
+      receiptText += `          MODERNSTORE RECEIPT           \\n`;
+      receiptText += `========================================\\n`;
+      receiptText += `Order ID   : #${currentReceiptData.id}\\n`;
+      receiptText += `Date       : ${currentReceiptData.date}\\n`;
+      receiptText += `Status     : Paid (Verified)\\n`;
+      receiptText += `----------------------------------------\\n`;
+      receiptText += `ITEMS PURCHASED:\\n`;
+      
+      currentReceiptData.items.forEach((item, index) => {
+        const itemLineTotal = (item.price * item.quantity).toFixed(2);
+        receiptText += `${index + 1}. ${item.title}\\n`;
+        receiptText += `   Qty: ${item.quantity}  @  $${item.price.toFixed(2)} each  =  $${itemLineTotal}\\n`;
+      });
+
+      receiptText += `----------------------------------------\\n`;
+      receiptText += `TOTAL PAID : $${currentReceiptData.total.toFixed(2)}\\n`;
+      receiptText += `========================================\\n`;
+      receiptText += `  Thank you for shopping with ModernStore! \\n`;
+
+      const blob = new Blob([receiptText], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const downloadLink = document.createElement("a");
+      downloadLink.href = url;
+      downloadLink.download = `receipt_${currentReceiptData.id}.txt`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(url);
+    });
+
+    // Buy Now Flow
+    window.buyNow = function(id) {
+      const product = products.find(p => p.id === id);
+      if (!product || product.stock < 1) return;
+
+      pendingBuyProduct = product;
+      buyNowTitle.textContent = product.title;
+      buyNowPrice.textContent = `$${product.price.toFixed(2)}`;
+      buyNowImage.src = product.imageUrl;
+
+      buyNowModal.classList.add("active");
+    };
+
+    buyNowCloseBtn.addEventListener("click", () => {
+      buyNowModal.classList.remove("active");
+      pendingBuyProduct = null;
+    });
+
+    confirmBuyBtn.addEventListener("click", () => {
+      if (!pendingBuyProduct) return;
+
+      const product = products.find(p => p.id === pendingBuyProduct.id);
+      if (product && product.stock > 0) {
+        product.stock -= 1;
+        saveState();
+        renderProducts();
+        if (currentUserRole === "admin") renderAdminInventory();
+        buyNowModal.classList.remove("active");
+
+        // Construct Receipt Data
+        const orderReceipt = {
+          id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
+          date: new Date().toLocaleString(),
+          items: [{
+            title: product.title,
+            price: product.price,
+            quantity: 1
+          }],
+          total: product.price
+        };
+
+        showReceiptModal(orderReceipt);
+      } else {
+        alert("Sorry, this item is out of stock.");
+      }
+      pendingBuyProduct = null;
+    });
+
+    // Cart Operations
+    window.addToCart = function(id) {
+      const product = products.find(p => p.id === id);
+      if (!product || product.stock <= 0) return;
+
+      const existing = cart.find(item => item.id === id);
+      if (existing) {
+        if (existing.quantity < product.stock) existing.quantity += 1;
+        else {
+          alert("Cannot exceed available stock.");
+          return;
+        }
+      } else {
+        cart.push({ id: product.id, title: product.title, price: product.price, quantity: 1 });
+      }
+
+      saveState();
+      updateCartUI();
+    };
+
+    window.removeFromCart = function(id) {
+      cart = cart.filter(item => item.id !== id);
+      saveState();
+      updateCartUI();
+    };
+
+    function updateCartUI() {
+      const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+      const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+      cartCountDisplay.textContent = totalCount;
+      cartTotalDisplay.textContent = `$${totalPrice.toFixed(2)}`;
+
+      if (cart.length === 0) {
+        cartItemsContainer.innerHTML = `<p class="text-center text-gray-500 py-12 text-sm">Your cart is empty.</p>`;
+        return;
+      }
+
+      cartItemsContainer.innerHTML = cart.map(item => `
+        <div class="py-3 flex justify-between items-center">
+          <div>
+            <h4 class="font-semibold text-gray-800 text-sm line-clamp-1">${item.title}</h4>
+            <p class="text-xs text-gray-500">$${item.price.toFixed(2)} &times; ${item.quantity}</p>
+          </div>
+          <button class="text-xs text-red-500 hover:text-red-700 font-semibold" onclick="removeFromCart('${item.id}')">Remove</button>
+        </div>
+      `).join("");
+    }
+
+    checkoutBtn.addEventListener("click", () => {
+      if (cart.length === 0) return;
+
+      const purchasedItems = cart.map(item => ({ ...item }));
+      const orderTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+      cart.forEach((cartItem) => {
+        const product = products.find(p => p.id === cartItem.id);
+        if (product) product.stock = Math.max(0, product.stock - cartItem.quantity);
+      });
+
+      cart = [];
+      saveState();
+      updateCartUI();
+      renderProducts();
+      if (currentUserRole === "admin") renderAdminInventory();
+      cartModal.classList.add("hidden");
+
+      // Construct Receipt Data for Cart Checkout
+      const orderReceipt = {
+        id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
+        date: new Date().toLocaleString(),
+        items: purchasedItems,
+        total: orderTotal
+      };
+
+      showReceiptModal(orderReceipt);
+    });
+
+    // Edit Product Handlers
+    window.openEditModal = function(id) {
+      if (currentUserRole !== "admin") return;
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+
+      editProductId.value = product.id;
+      editTitle.value = product.title;
+      editPrice.value = product.price;
+      editStock.value = product.stock;
+      editCategory.value = product.category;
+      editImageUrl.value = product.imageUrl;
+      editImageFileInput.value = "";
+
+      editProductModal.classList.add("active");
+    };
+
+    function closeEditModal() {
+      editProductModal.classList.remove("active");
+      editProductForm.reset();
+    }
+
+    editModalCloseBtn.addEventListener("click", closeEditModal);
+    cancelEditBtn.addEventListener("click", closeEditModal);
+
+    editProductForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (currentUserRole !== "admin") return;
+
+      const product = products.find(p => p.id === editProductId.value);
+      if (!product) return;
+
+      product.title = editTitle.value.trim();
+      product.price = parseFloat(editPrice.value);
+      product.stock = parseInt(editStock.value, 10);
+      product.category = editCategory.value;
+      product.imageUrl = editImageUrl.value.trim() || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80";
+
+      cart = cart.map(item => item.id === product.id ? { ...item, price: product.price, title: product.title, quantity: Math.min(item.quantity, product.stock) } : item).filter(item => item.quantity > 0);
+
+      saveState();
+      renderProducts();
+      renderAdminInventory();
+      updateCartUI();
+      closeEditModal();
+      alert("Product updated!");
+    });
+
+    // Add Product Form
+    productForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (currentUserRole !== "admin") return;
+
+      const newProduct = {
+        id: "prod_" + Date.now(),
+        title: document.getElementById("title").value.trim(),
+        description: document.getElementById("description").value.trim(),
+        price: parseFloat(document.getElementById("price").value),
+        stock: parseInt(document.getElementById("stock").value, 10),
+        category: document.getElementById("category").value,
+        imageUrl: document.getElementById("imageUrl").value.trim() || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"
+      };
+
+      products.unshift(newProduct);
+      saveState();
+      renderProducts();
+      renderAdminInventory();
+      productForm.reset();
+      imageFileInput.value = "";
+      alert("Product added successfully!");
+      viewProductsBtn.click();
+    });
+
+    // Delete Product
+    window.deleteProduct = function(id) {
+      if (currentUserRole !== "admin") return;
+      if (!confirm("Are you sure you want to delete this product?")) return;
+
+      products = products.filter(p => p.id !== id);
+      cart = cart.filter(item => item.id !== id);
+      saveState();
+      renderProducts();
+      renderAdminInventory();
+      updateCartUI();
+    };
+
+    // Navigation & Toggles
+    viewProductsBtn.addEventListener("click", () => {
+      catalogSection.classList.remove("hidden");
+      adminSection.classList.add("hidden");
+    });
+
+    viewAdminBtn.addEventListener("click", () => {
+      if (currentUserRole !== "admin") return;
+      catalogSection.classList.add("hidden");
+      adminSection.classList.remove("hidden");
+      renderAdminInventory();
+    });
+
+    cartToggleBtn.addEventListener("click", () => cartModal.classList.remove("hidden"));
+    closeCartBtn.addEventListener("click", () => cartModal.classList.add("hidden"));
+    cartOverlay.addEventListener("click", () => cartModal.classList.add("hidden"));
+
+    searchInput.addEventListener("input", renderProducts);
+    categoryFilter.addEventListener("change", renderProducts);
+    maxPriceFilter.addEventListener("input", renderProducts);
+    resetFiltersBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      categoryFilter.value = "";
+      maxPriceFilter.value = "";
+      renderProducts();
+    });
+
+    // Boot
+    updateRoleUI();
+    renderProducts();
+    updateCartUI();
+  </script>
+</body>
+</html>
